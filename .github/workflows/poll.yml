@@ -4,6 +4,13 @@ on:
   schedule:
     - cron: "0 11 * * *"      # 11:00 UTC daily (~7am ET). Cron is best-effort.
   workflow_dispatch:           # lets you run it manually from the Actions tab
+  push:                        # also run when the pipeline code changes
+    branches: [main]
+    paths:                     # NOT data/docs — avoids looping on the bot's own commit
+      - "src/**"
+      - "config.yml"
+      - "data/crosswalk.csv"
+      - ".github/workflows/poll.yml"
 
 permissions:
   contents: write              # needed to commit updated data back to the repo
@@ -32,6 +39,6 @@ jobs:
         run: |
           git config user.name "catalyst-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/snapshot.json docs/data/catalysts.json
+          git add data/snapshot.json docs/data/
           git diff --staged --quiet || git commit -m "data: catalyst update $(date -u +%F)"
           git push

@@ -25,6 +25,7 @@ CONFIG = ROOT / "config.yml"
 CROSSWALK = ROOT / "data" / "crosswalk.csv"
 SNAPSHOT = ROOT / "data" / "snapshot.json"
 PUBLISH = ROOT / "docs" / "data" / "catalysts.json"
+STATUS = ROOT / "docs" / "data" / "status.json"
 
 # Your GitHub Pages URL (live once Pages is enabled).
 DASHBOARD_URL = "https://sanjayjainmd.github.io/govt-catalyst-tracker/"
@@ -181,22 +182,31 @@ def main():
     print(f"{len(alertable)} new/changed, {len(to_email)} qualify for email.")
 
     prefix = cfg["email"]["subject_prefix"]
+    email_sent, email_error = False, None
     try:
         if to_email:
-            email_digest.send(to_email, prefix, DASHBOARD_URL)
+            email_sent = email_digest.send(to_email, prefix, DASHBOARD_URL)
         else:
             # Daily heartbeat so you always know the run happened.
             stats = {"scanned": len(records),
                      "tracked": sum(1 for r in records if r.get("ticker")),
                      "new": len(alertable)}
-            email_digest.send_heartbeat(stats, prefix, DASHBOARD_URL)
+            email_sent = email_digest.send_heartbeat(stats, prefix, DASHBOARD_URL)
     except Exception as e:  # a mail hiccup shouldn't lose the data commit
+        email_error = str(e)
         print(f"email: send failed: {e}")
 
     kept = merge_published(records, cfg)
     PUBLISH.parent.mkdir(parents=True, exist_ok=True)
     PUBLISH.write_text(json.dumps({"updated": _utcnow(), "catalysts": kept}, indent=2))
     SNAPSHOT.write_text(json.dumps(snapshot, indent=2))
+    STATUS.write_text(json.dumps({
+        "updated": _utcnow(),
+        "scanned": len(records),
+        "qualified_for_email": len(to_email),
+        "email_sent": email_sent,
+        "email_error": email_error,
+    }, indent=2))
     print(f"Published {len(kept)} catalysts -> {PUBLISH.relative_to(ROOT)}")
 
 
