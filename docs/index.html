@@ -8,46 +8,66 @@
   :root {
     --bg: #faf9f5; --card: #ffffff; --text: #1a1a1a; --muted: #6b6b6b;
     --border: #e6e4dd; --accent: #185fa5; --danger: #a32d2d; --warn: #854f0b; --ok: #3b6d11;
+    --award: #185fa5; --filing: #534ab7; --press: #0f6e56; --rule: #5f5e5a;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #1e1d1b; --card: #2a2927; --text: #ededeb; --muted: #a0a0a0;
       --border: #3a3937; --accent: #6aa6e8; --danger: #e88a8a; --warn: #e0a64a; --ok: #97c459;
+      --award: #85b7eb; --filing: #afa9ec; --press: #5dcaa5; --rule: #b4b2a9;
     }
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
          font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
          line-height: 1.5; padding: 24px; }
-  .wrap { max-width: 860px; margin: 0 auto; }
+  .wrap { max-width: 880px; margin: 0 auto; }
   header { display: flex; justify-content: space-between; align-items: baseline;
            flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
   h1 { font-size: 20px; font-weight: 500; margin: 0; }
   .updated { color: var(--muted); font-size: 13px; }
   .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-             gap: 12px; margin-bottom: 24px; }
+             gap: 12px; margin-bottom: 20px; }
   .metric { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
   .metric .label { font-size: 13px; color: var(--muted); }
   .metric .value { font-size: 24px; font-weight: 500; margin-top: 2px; }
-  .feed { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--card); }
-  .row { display: grid; grid-template-columns: 60px 1fr auto; gap: 10px; align-items: center;
-         padding: 12px 14px; border-bottom: 1px solid var(--border); }
-  .row:last-child { border-bottom: none; }
-  .tkr { font-weight: 600; font-size: 15px; }
-  .evt a { color: var(--text); text-decoration: none; font-size: 14px; }
-  .evt a:hover { text-decoration: underline; }
-  .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .score { text-align: right; }
-  .score .num { font-size: 18px; font-weight: 600; }
-  .score .route { font-size: 11px; color: var(--muted); }
-  .immediate .num { color: var(--danger); }
-  .digest .num { color: var(--warn); }
-  .badge-active { display: inline-block; font-size: 11px; color: var(--ok);
-                  border: 1px solid var(--ok); border-radius: 4px; padding: 0 5px; margin-right: 4px; }
-  .empty { padding: 32px; text-align: center; color: var(--muted); }
-  .foot { color: var(--muted); font-size: 12px; margin-top: 18px; }
+  .controls { display: flex; justify-content: flex-end; margin-bottom: 10px; }
   select { background: var(--card); color: var(--text); border: 1px solid var(--border);
            border-radius: 8px; padding: 6px 10px; font-size: 13px; }
+  .company { border: 1px solid var(--border); border-radius: 12px; background: var(--card);
+             margin-bottom: 10px; overflow: hidden; }
+  .chead { display: grid; grid-template-columns: 56px 1fr auto; gap: 12px; align-items: center;
+           padding: 14px 16px; cursor: pointer; }
+  .chead:hover { background: rgba(127,127,127,0.05); }
+  .tkr { font-size: 16px; font-weight: 600; }
+  .cname { font-size: 14px; }
+  .csub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .cstats { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); }
+  .pill { border: 1px solid var(--border); border-radius: 20px; padding: 2px 9px; white-space: nowrap; }
+  .pill.email { color: var(--danger); border-color: var(--danger); }
+  .pill.active { color: var(--ok); border-color: var(--ok); }
+  .chev { color: var(--muted); font-size: 12px; transition: transform .15s; }
+  .company.open .chev { transform: rotate(90deg); }
+  .citems { border-top: 1px solid var(--border); padding: 4px 0; display: none; }
+  .company.open .citems { display: block; }
+  .item { display: grid; grid-template-columns: 64px 1fr auto; gap: 10px; align-items: center;
+          padding: 9px 16px; }
+  .item + .item { border-top: 1px solid var(--border); }
+  .src { font-size: 11px; font-weight: 500; text-align: center; border-radius: 4px; padding: 2px 0; }
+  .src.usaspending { color: var(--award); border: 1px solid var(--award); }
+  .src.sec_edgar { color: var(--filing); border: 1px solid var(--filing); }
+  .src.press_release { color: var(--press); border: 1px solid var(--press); }
+  .src.federal_register { color: var(--rule); border: 1px solid var(--rule); }
+  .item a { color: var(--text); text-decoration: none; font-size: 13px; }
+  .item a:hover { text-decoration: underline; }
+  .imeta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .iscore { text-align: right; font-size: 14px; font-weight: 600; }
+  .iscore.immediate { color: var(--danger); }
+  .iscore.digest { color: var(--warn); }
+  .badge-active { display: inline-block; font-size: 10px; color: var(--ok);
+                  border: 1px solid var(--ok); border-radius: 4px; padding: 0 4px; margin-right: 4px; }
+  .empty { padding: 32px; text-align: center; color: var(--muted); }
+  .foot { color: var(--muted); font-size: 12px; margin-top: 18px; }
 </style>
 </head>
 <body>
@@ -59,83 +79,133 @@
 
   <div class="metrics" id="metrics"></div>
 
-  <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+  <div class="controls">
     <select id="filter">
-      <option value="active">Active funding</option>
-      <option value="emailed">Emailed (immediate + digest)</option>
-      <option value="all">All scored catalysts</option>
-      <option value="immediate">Immediate only</option>
+      <option value="all">All companies</option>
+      <option value="emailed">Email-worthy only</option>
+      <option value="active">Active funding only</option>
     </select>
   </div>
 
-  <div class="feed" id="feed"></div>
+  <div id="companies"></div>
 
-  <p class="foot">Descriptive triage scored 0–10 (tier × stage × materiality). Not a predictive
-     signal or trade recommendation. Data: Federal Register + USAspending (public APIs).</p>
+  <p class="foot">One row per company — expand to see its awards, 8-Ks, and press releases.
+     Descriptive triage (tier × stage × materiality), not a predictive signal or trade recommendation.</p>
 </div>
 
 <script>
 const TIER = {1:"T1 offtake/floor",2:"T2 production credit",3:"T3 loan",4:"T4 grant",5:"T5 R&D"};
+const SRC = {usaspending:"award", sec_edgar:"8-K", press_release:"press", federal_register:"rule"};
 const fmtAmt = a => a ? "$" + Math.round(a/1e6).toLocaleString() + "M" : "—";
-const fmtMat = m => m ? Math.round(m*100) + "% of cap" : "n/a";
+const fmtMat = m => m ? Math.round(m*100) + "% of cap" : "";
+const clean = s => (s||"").replace(/\s+—.*$/,"").replace(/,?\s+(inc|llc|corp|corporation|ltd|company)\.?$/i,"").trim();
 
-function render(data, mode) {
-  const all = data.catalysts || [];
-  let rows = all;
-  if (mode === "active") rows = all.filter(c => c.active === true).sort((a, b) => (b.amount || 0) - (a.amount || 0));
-  else if (mode === "emailed") rows = all.filter(c => c.decision === "immediate" || c.decision === "digest");
-  else if (mode === "immediate") rows = all.filter(c => c.decision === "immediate");
+let DATA = {catalysts: []};
 
-  const feed = document.getElementById("feed");
-  if (!rows.length) {
-    const msg = mode === "active"
-      ? "No active awards to tracked companies right now. The daily run checks period-of-performance dates."
-      : "No catalysts in this view yet. The daily run will populate it.";
-    feed.innerHTML = `<div class="empty">${msg}</div>`;
-    return;
+function groups(filter) {
+  const byTicker = new Map();
+  const noTicker = [];
+  for (const c of DATA.catalysts) {
+    if (c.ticker) {
+      if (!byTicker.has(c.ticker)) byTicker.set(c.ticker, []);
+      byTicker.get(c.ticker).push(c);
+    } else noTicker.push(c);
   }
-  feed.innerHTML = rows.map(c => `
-    <div class="row ${c.decision}">
-      <div class="tkr">${c.ticker || "—"}</div>
-      <div class="evt">
-        <a href="${c.url}" target="_blank" rel="noopener">${c.title || ""}</a>
-        <div class="meta">
-          ${c.active ? '<span class="badge-active">active</span> ' : ""}${TIER[c.quality_tier]||"T?"} · ${fmtMat(c.materiality_ratio)} · ${fmtAmt(c.amount)}${c.pop_end ? " · ends " + c.pop_end : ""} · ${c.program||""}
-        </div>
-      </div>
-      <div class="score">
-        <div class="num">${c.score ?? "—"}</div>
-        <div class="route">${c.decision}</div>
-      </div>
-    </div>`).join("");
+  let list = [...byTicker.entries()].map(([ticker, items]) => {
+    const emailed = items.filter(i => i.decision === "immediate" || i.decision === "digest");
+    const active = items.filter(i => i.active === true);
+    // Prefer a filing/award recipient name over a press headline.
+    const named = items.filter(i => i.source==="sec_edgar" || i.source==="usaspending")
+                       .sort((a,b)=>(b.amount||0)-(a.amount||0))[0];
+    return {
+      ticker, items,
+      name: clean(named && named.recipient_legal) || ticker,
+      best: items.reduce((m,i)=>Math.max(m,i.score||0),0),
+      activeUsd: active.reduce((s,i)=>s+(i.amount||0),0),
+      hasActive: active.length>0, hasEmail: emailed.length>0,
+    };
+  });
+  if (filter === "emailed") list = list.filter(g => g.hasEmail);
+  else if (filter === "active") list = list.filter(g => g.hasActive);
+  list.sort((a,b) => (b.hasEmail-a.hasEmail) || (b.best-a.best) || (b.activeUsd-a.activeUsd));
+  return {list, noTicker};
 }
 
-function metrics(data) {
-  const all = data.catalysts || [];
+function itemRow(c) {
+  const route = (c.decision === "immediate" || c.decision === "digest") ? c.decision : "";
+  const bits = [TIER[c.quality_tier]||"", fmtMat(c.materiality_ratio), fmtAmt(c.amount),
+                c.pop_end ? "ends "+c.pop_end : "", c.first_seen||""].filter(Boolean).join(" · ");
+  return `<div class="item">
+    <div class="src ${c.source}">${SRC[c.source]||c.source}</div>
+    <div>
+      <a href="${c.url}" target="_blank" rel="noopener">${(c.active?'<span class="badge-active">active</span> ':'')}${c.title||""}</a>
+      <div class="imeta">${bits}</div>
+    </div>
+    <div class="iscore ${route}">${c.score ?? ""}</div>
+  </div>`;
+}
+
+function companyCard(g) {
+  const items = g.items.slice().sort((a,b)=>(b.score||0)-(a.score||0));
+  const stats = [];
+  if (g.hasEmail) stats.push('<span class="pill email">email</span>');
+  if (g.activeUsd > 0) stats.push(`<span class="pill active">$${Math.round(g.activeUsd/1e6).toLocaleString()}M active</span>`);
+  stats.push(`<span class="pill">best ${g.best.toFixed(1)}</span>`);
+  return `<div class="company">
+    <div class="chead" onclick="this.parentNode.classList.toggle('open')">
+      <div class="tkr">${g.ticker}</div>
+      <div><div class="cname">${g.name}</div><div class="csub">${items.length} item${items.length>1?"s":""}</div></div>
+      <div class="cstats">${stats.join("")}<span class="chev">▶</span></div>
+    </div>
+    <div class="citems">${items.map(itemRow).join("")}</div>
+  </div>`;
+}
+
+function render() {
+  const filter = document.getElementById("filter").value;
+  const {list, noTicker} = groups(filter);
+  const el = document.getElementById("companies");
+  let html = list.map(companyCard).join("");
+  if (filter === "all" && noTicker.length) {
+    html += `<div class="company">
+      <div class="chead" onclick="this.parentNode.classList.toggle('open')">
+        <div class="tkr" style="font-size:13px;color:var(--muted)">—</div>
+        <div><div class="cname">No ticker</div><div class="csub">private or unmatched · ${noTicker.length} items</div></div>
+        <div class="cstats"><span class="chev">▶</span></div>
+      </div>
+      <div class="citems">${noTicker.slice().sort((a,b)=>(b.amount||0)-(a.amount||0)).map(itemRow).join("")}</div>
+    </div>`;
+  }
+  el.innerHTML = html || '<div class="empty">No companies in this view yet. The daily run will populate it.</div>';
+}
+
+function metrics() {
+  const all = DATA.catalysts;
+  const tickers = new Set(all.filter(c=>c.ticker).map(c=>c.ticker));
   const active = all.filter(c => c.active === true);
-  const activeUsd = active.reduce((s, c) => s + (c.amount || 0), 0);
-  const emailed = all.filter(c => c.decision === "immediate" || c.decision === "digest");
+  const activeUsd = active.reduce((s,c)=>s+(c.amount||0),0);
+  const emailedCos = new Set(all.filter(c=>c.ticker && (c.decision==="immediate"||c.decision==="digest")).map(c=>c.ticker));
   const cards = [
-    ["Tracked", all.length],
+    ["Companies", tickers.size],
     ["Active awards", active.length],
-    ["Active $", "$" + Math.round(activeUsd / 1e6).toLocaleString() + "M"],
-    ["Emailed", emailed.length],
+    ["Active $", "$"+Math.round(activeUsd/1e6).toLocaleString()+"M"],
+    ["Email-worthy", emailedCos.size],
   ];
-  document.getElementById("metrics").innerHTML = cards.map(([l, v]) =>
+  document.getElementById("metrics").innerHTML = cards.map(([l,v]) =>
     `<div class="metric"><div class="label">${l}</div><div class="value">${v}</div></div>`).join("");
 }
 
 fetch("./data/catalysts.json?_=" + Date.now())
   .then(r => r.json())
   .then(data => {
+    DATA = data;
     document.getElementById("updated").textContent =
       data.updated ? "updated " + new Date(data.updated).toLocaleString() : "no data yet";
-    metrics(data);
-    const sel = document.getElementById("filter");
-    render(data, sel.value);
-    sel.addEventListener("change", () => render(data, sel.value));
+    metrics();
+    render();
+    document.getElementById("filter").addEventListener("change", render);
   })
-  .catch(() => { document.getElementById("feed").innerHTML =
+  .catch(() => { document.getElementById("companies").innerHTML =
     '<div class="empty">Could not load data/catalysts.json.</div>'; });
 </script>
 </body>
