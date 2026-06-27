@@ -53,6 +53,7 @@ email:
 lookback_days:
   federal_register: 7
   usaspending: 1095        # ~3 years
+  sec_edgar: 45            # incentive 8-Ks (conditional loans, offtakes)
 
 # Max awards to enrich with period-of-performance end dates per run (caps API calls).
 enrich_limit: 60

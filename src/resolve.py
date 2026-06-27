@@ -36,8 +36,28 @@ def _candidates(c):
     return [_norm(n) for n in names if _norm(n)]
 
 
+def _attach(rec, c):
+    rec["ticker"] = c["ticker"]
+    try:
+        mc = float(c["market_cap_musd"]) * 1e6
+        rec["market_cap"] = mc
+        if rec.get("amount"):
+            rec["materiality_ratio"] = float(rec["amount"]) / mc
+    except (ValueError, TypeError, ZeroDivisionError):
+        pass
+    if c.get("sector"):
+        rec["sector"] = c["sector"]
+
+
 def resolve(rec, crosswalk):
     """Attach ticker/market_cap/materiality if the recipient matches the crosswalk."""
+    # A feed may already know the ticker (e.g. EDGAR) — fill market cap by ticker.
+    if rec.get("ticker"):
+        for c in crosswalk:
+            if c["ticker"] == rec["ticker"]:
+                _attach(rec, c)
+                break
+        return rec
     if not rec.get("recipient_legal"):
         return rec
     target = _norm(rec["recipient_legal"])
@@ -45,15 +65,6 @@ def resolve(rec, crosswalk):
         return rec
     for c in crosswalk:
         if any(cn == target or cn in target or target in cn for cn in _candidates(c)):
-            rec["ticker"] = c["ticker"]
-            try:
-                mc = float(c["market_cap_musd"]) * 1e6
-                rec["market_cap"] = mc
-                if rec.get("amount"):
-                    rec["materiality_ratio"] = float(rec["amount"]) / mc
-            except (ValueError, TypeError, ZeroDivisionError):
-                pass
-            if c.get("sector"):
-                rec["sector"] = c["sector"]
+            _attach(rec, c)
             break
     return rec

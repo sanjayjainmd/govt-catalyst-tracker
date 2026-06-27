@@ -17,7 +17,7 @@ from resolve import load_crosswalk, resolve  # noqa: E402
 from score import score_record           # noqa: E402
 from route import decide                  # noqa: E402
 import email_digest                       # noqa: E402
-from feeds import federal_register, usaspending  # noqa: E402
+from feeds import federal_register, usaspending, sec_edgar  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG = ROOT / "config.yml"
@@ -74,6 +74,16 @@ def collect(cfg, crosswalk):
     for rec in items:
         add(rec)
     print(f"  + usaspending / {len(names)} tracked recipients: {len(items)} awards")
+
+    # Announcement feed: SEC 8-Ks for incentive deals (conditional loans, offtakes…).
+    try:
+        items = sec_edgar.fetch(lb.get("sec_edgar", 45))
+    except Exception as e:
+        print(f"  ! sec_edgar: {e}")
+        items = []
+    for rec in items:
+        add(rec)
+    print(f"  + sec_edgar / incentive 8-Ks: {len(items)} filings")
     return records
 
 
