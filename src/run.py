@@ -25,8 +25,8 @@ CROSSWALK = ROOT / "data" / "crosswalk.csv"
 SNAPSHOT = ROOT / "data" / "snapshot.json"
 PUBLISH = ROOT / "docs" / "data" / "catalysts.json"
 
-# Set this to your GitHub Pages URL once Pages is live.
-DASHBOARD_URL = None
+# Your GitHub Pages URL (live once Pages is enabled).
+DASHBOARD_URL = "https://sanjayjainmd.github.io/govt-catalyst-tracker/"
 
 
 def apply_tier_overrides(rec, cfg):
