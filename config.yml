@@ -1,0 +1,56 @@
+# Government catalyst tracker — configuration
+# Edit this file to add programs, tune tiers, or change thresholds.
+# No code changes needed for most adjustments.
+
+programs:
+  - name: CHIPS Act
+    agency: Department of Commerce
+    keywords: ["CHIPS", "semiconductor", "advanced packaging"]
+    default_tier: 4          # one-time construction grants
+    default_sector: semiconductors
+
+  - name: IRA 45X manufacturing credit
+    agency: Department of the Treasury
+    keywords: ["advanced manufacturing production credit", "section 45X"]
+    default_tier: 2          # per-unit production credit → gross margin
+    default_sector: clean-energy
+
+  - name: DOE Loan Programs Office
+    agency: Department of Energy
+    keywords: ["loan guarantee", "Loan Programs Office", "conditional commitment"]
+    default_tier: 3          # loans / loan guarantees
+    default_sector: energy
+
+  - name: DPA Title III / critical minerals
+    agency: Department of Defense
+    keywords: ["Defense Production Act", "critical minerals", "rare earth"]
+    default_tier: 4
+    default_sector: critical-minerals
+
+# Keywords that upgrade an event to Tier 1 (revenue de-risking) regardless of program.
+# These are the strongest, most underpriced signals — offtake, price floors, govt equity.
+tier_overrides:
+  tier1:
+    - "offtake"
+    - "price floor"
+    - "purchase agreement"
+    - "guaranteed purchase"
+    - "equity stake"
+    - "equity investment"
+
+# Score routing (0–10 scale). See src/score.py for the model.
+thresholds:
+  immediate: 7.0    # send an email right away
+  digest: 3.0       # batch into the daily digest
+
+email:
+  subject_prefix: "[Catalyst]"
+  send_decisions: ["immediate", "digest"]
+
+# How far back each feed looks on every run.
+lookback_days:
+  federal_register: 7
+  usaspending: 30
+
+# Drop catalysts older than this from the published dashboard.
+retention_days: 60

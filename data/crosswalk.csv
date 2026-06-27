@@ -1,0 +1,26 @@
+legal_name,ticker,market_cap_musd,sector
+MP Materials Corp,MP,8000,critical-minerals
+Lithium Americas Corp,LAC,900,critical-minerals
+Albemarle Corporation,ALB,12000,critical-minerals
+Piedmont Lithium Inc,PLL,250,critical-minerals
+USA Rare Earth Inc,USAR,1500,critical-minerals
+Energy Fuels Inc,UUUU,1200,critical-minerals
+First Solar Inc,FSLR,22000,solar
+Nextracker Inc,NXT,7000,solar
+Array Technologies Inc,ARRY,1200,solar
+Enphase Energy Inc,ENPH,8000,solar
+Intel Corporation,INTC,95000,semiconductors
+Micron Technology Inc,MU,110000,semiconductors
+GlobalFoundries Inc,GFS,25000,semiconductors
+Wolfspeed Inc,WOLF,1500,semiconductors
+SkyWater Technology Inc,SKYT,600,semiconductors
+Microvast Holdings Inc,MVST,500,batteries
+Amprius Technologies Inc,AMPX,400,batteries
+QuantumScape Corporation,QS,3000,batteries
+Oklo Inc,OKLO,6000,nuclear
+NuScale Power Corporation,SMR,5000,nuclear
+Centrus Energy Corp,LEU,1800,nuclear
+Plug Power Inc,PLUG,2000,hydrogen
+Bloom Energy Corporation,BE,4000,hydrogen
+Lithium Americas Corp,LAAC,500,critical-minerals
+Perpetual Industries Inc,PRPL,150,critical-minerals

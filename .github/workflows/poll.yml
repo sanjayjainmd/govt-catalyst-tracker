@@ -1,0 +1,37 @@
+name: poll-catalysts
+
+on:
+  schedule:
+    - cron: "0 11 * * *"      # 11:00 UTC daily (~7am ET). Cron is best-effort.
+  workflow_dispatch:           # lets you run it manually from the Actions tab
+
+permissions:
+  contents: write              # needed to commit updated data back to the repo
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline
+        env:
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_APP_PASSWORD: ${{ secrets.MAIL_APP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+        run: python src/run.py
+
+      - name: Commit updated data
+        run: |
+          git config user.name "catalyst-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/snapshot.json docs/data/catalysts.json
+          git diff --staged --quiet || git commit -m "data: catalyst update $(date -u +%F)"
+          git push

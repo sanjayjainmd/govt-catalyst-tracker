@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Government catalyst tracker</title>
+<style>
+  :root {
+    --bg: #faf9f5; --card: #ffffff; --text: #1a1a1a; --muted: #6b6b6b;
+    --border: #e6e4dd; --accent: #185fa5; --danger: #a32d2d; --warn: #854f0b; --ok: #3b6d11;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1d1b; --card: #2a2927; --text: #ededeb; --muted: #a0a0a0;
+      --border: #3a3937; --accent: #6aa6e8; --danger: #e88a8a; --warn: #e0a64a; --ok: #97c459;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+         line-height: 1.5; padding: 24px; }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: baseline;
+           flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  h1 { font-size: 20px; font-weight: 500; margin: 0; }
+  .updated { color: var(--muted); font-size: 13px; }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+             gap: 12px; margin-bottom: 24px; }
+  .metric { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .metric .label { font-size: 13px; color: var(--muted); }
+  .metric .value { font-size: 24px; font-weight: 500; margin-top: 2px; }
+  .feed { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--card); }
+  .row { display: grid; grid-template-columns: 60px 1fr auto; gap: 10px; align-items: center;
+         padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .row:last-child { border-bottom: none; }
+  .tkr { font-weight: 600; font-size: 15px; }
+  .evt a { color: var(--text); text-decoration: none; font-size: 14px; }
+  .evt a:hover { text-decoration: underline; }
+  .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .score { text-align: right; }
+  .score .num { font-size: 18px; font-weight: 600; }
+  .score .route { font-size: 11px; color: var(--muted); }
+  .immediate .num { color: var(--danger); }
+  .digest .num { color: var(--warn); }
+  .empty { padding: 32px; text-align: center; color: var(--muted); }
+  .foot { color: var(--muted); font-size: 12px; margin-top: 18px; }
+  select { background: var(--card); color: var(--text); border: 1px solid var(--border);
+           border-radius: 8px; padding: 6px 10px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Government catalyst tracker</h1>
+    <span class="updated" id="updated">loading…</span>
+  </header>
+
+  <div class="metrics" id="metrics"></div>
+
+  <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+    <select id="filter">
+      <option value="emailed">Emailed (immediate + digest)</option>
+      <option value="all">All scored catalysts</option>
+      <option value="immediate">Immediate only</option>
+    </select>
+  </div>
+
+  <div class="feed" id="feed"></div>
+
+  <p class="foot">Descriptive triage scored 0–10 (tier × stage × materiality). Not a predictive
+     signal or trade recommendation. Data: Federal Register + USAspending (public APIs).</p>
+</div>
+
+<script>
+const TIER = {1:"T1 offtake/floor",2:"T2 production credit",3:"T3 loan",4:"T4 grant",5:"T5 R&D"};
+const fmtAmt = a => a ? "$" + Math.round(a/1e6).toLocaleString() + "M" : "—";
+const fmtMat = m => m ? Math.round(m*100) + "% of cap" : "n/a";
+
+function render(data, mode) {
+  const all = data.catalysts || [];
+  let rows = all;
+  if (mode === "emailed") rows = all.filter(c => c.decision === "immediate" || c.decision === "digest");
+  else if (mode === "immediate") rows = all.filter(c => c.decision === "immediate");
+
+  const feed = document.getElementById("feed");
+  if (!rows.length) {
+    feed.innerHTML = '<div class="empty">No catalysts in this view yet. The daily run will populate it.</div>';
+    return;
+  }
+  feed.innerHTML = rows.map(c => `
+    <div class="row ${c.decision}">
+      <div class="tkr">${c.ticker || "—"}</div>
+      <div class="evt">
+        <a href="${c.url}" target="_blank" rel="noopener">${c.title || ""}</a>
+        <div class="meta">${TIER[c.quality_tier]||"T?"} · stage ${c.stage} · ${fmtMat(c.materiality_ratio)} · ${fmtAmt(c.amount)} · ${c.program||""}</div>
+      </div>
+      <div class="score">
+        <div class="num">${c.score ?? "—"}</div>
+        <div class="route">${c.decision}</div>
+      </div>
+    </div>`).join("");
+}
+
+function metrics(data) {
+  const all = data.catalysts || [];
+  const emailed = all.filter(c => c.decision === "immediate" || c.decision === "digest");
+  const top = all.reduce((m, c) => Math.max(m, c.score || 0), 0);
+  const cards = [
+    ["Tracked", all.length],
+    ["Emailed", emailed.length],
+    ["Top score", top.toFixed(1)],
+    ["Immediate", all.filter(c => c.decision === "immediate").length],
+  ];
+  document.getElementById("metrics").innerHTML = cards.map(([l, v]) =>
+    `<div class="metric"><div class="label">${l}</div><div class="value">${v}</div></div>`).join("");
+}
+
+fetch("./data/catalysts.json?_=" + Date.now())
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById("updated").textContent =
+      data.updated ? "updated " + new Date(data.updated).toLocaleString() : "no data yet";
+    metrics(data);
+    const sel = document.getElementById("filter");
+    render(data, sel.value);
+    sel.addEventListener("change", () => render(data, sel.value));
+  })
+  .catch(() => { document.getElementById("feed").innerHTML =
+    '<div class="empty">Could not load data/catalysts.json.</div>'; });
+</script>
+</body>
+</html>
