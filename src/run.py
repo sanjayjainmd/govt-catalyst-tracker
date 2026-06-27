@@ -29,7 +29,7 @@ STATUS = ROOT / "docs" / "data" / "status.json"
 
 # Your GitHub Pages URL (live once Pages is enabled).
 DASHBOARD_URL = "https://sanjayjainmd.github.io/govt-catalyst-tracker/"
-# Email delivery via Gmail SMTP; see status.json for per-run send result.
+# Email delivery via Gmail SMTP; per-run send result is recorded in status.json.
 
 
 def apply_tier_overrides(rec, cfg):
