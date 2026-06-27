@@ -33,6 +33,8 @@ def base_record(**k):
         "quality_tier": k.get("quality_tier"),
         "materiality_ratio": None,
         "market_cap": None,
+        "pop_end": None,          # period-of-performance end date (awards)
+        "active": None,           # True if pop_end is in the future
         "dissemination": "primary",
         "title": k.get("title"),
         "tier1_hit": False,

@@ -42,6 +42,8 @@
   .score .route { font-size: 11px; color: var(--muted); }
   .immediate .num { color: var(--danger); }
   .digest .num { color: var(--warn); }
+  .badge-active { display: inline-block; font-size: 11px; color: var(--ok);
+                  border: 1px solid var(--ok); border-radius: 4px; padding: 0 5px; margin-right: 4px; }
   .empty { padding: 32px; text-align: center; color: var(--muted); }
   .foot { color: var(--muted); font-size: 12px; margin-top: 18px; }
   select { background: var(--card); color: var(--text); border: 1px solid var(--border);
@@ -59,6 +61,7 @@
 
   <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
     <select id="filter">
+      <option value="active">Active funding</option>
       <option value="emailed">Emailed (immediate + digest)</option>
       <option value="all">All scored catalysts</option>
       <option value="immediate">Immediate only</option>
@@ -79,12 +82,16 @@ const fmtMat = m => m ? Math.round(m*100) + "% of cap" : "n/a";
 function render(data, mode) {
   const all = data.catalysts || [];
   let rows = all;
-  if (mode === "emailed") rows = all.filter(c => c.decision === "immediate" || c.decision === "digest");
+  if (mode === "active") rows = all.filter(c => c.active === true).sort((a, b) => (b.amount || 0) - (a.amount || 0));
+  else if (mode === "emailed") rows = all.filter(c => c.decision === "immediate" || c.decision === "digest");
   else if (mode === "immediate") rows = all.filter(c => c.decision === "immediate");
 
   const feed = document.getElementById("feed");
   if (!rows.length) {
-    feed.innerHTML = '<div class="empty">No catalysts in this view yet. The daily run will populate it.</div>';
+    const msg = mode === "active"
+      ? "No active awards to tracked companies right now. The daily run checks period-of-performance dates."
+      : "No catalysts in this view yet. The daily run will populate it.";
+    feed.innerHTML = `<div class="empty">${msg}</div>`;
     return;
   }
   feed.innerHTML = rows.map(c => `
@@ -92,7 +99,9 @@ function render(data, mode) {
       <div class="tkr">${c.ticker || "—"}</div>
       <div class="evt">
         <a href="${c.url}" target="_blank" rel="noopener">${c.title || ""}</a>
-        <div class="meta">${TIER[c.quality_tier]||"T?"} · stage ${c.stage} · ${fmtMat(c.materiality_ratio)} · ${fmtAmt(c.amount)} · ${c.program||""}</div>
+        <div class="meta">
+          ${c.active ? '<span class="badge-active">active</span> ' : ""}${TIER[c.quality_tier]||"T?"} · ${fmtMat(c.materiality_ratio)} · ${fmtAmt(c.amount)}${c.pop_end ? " · ends " + c.pop_end : ""} · ${c.program||""}
+        </div>
       </div>
       <div class="score">
         <div class="num">${c.score ?? "—"}</div>
@@ -103,13 +112,14 @@ function render(data, mode) {
 
 function metrics(data) {
   const all = data.catalysts || [];
+  const active = all.filter(c => c.active === true);
+  const activeUsd = active.reduce((s, c) => s + (c.amount || 0), 0);
   const emailed = all.filter(c => c.decision === "immediate" || c.decision === "digest");
-  const top = all.reduce((m, c) => Math.max(m, c.score || 0), 0);
   const cards = [
     ["Tracked", all.length],
+    ["Active awards", active.length],
+    ["Active $", "$" + Math.round(activeUsd / 1e6).toLocaleString() + "M"],
     ["Emailed", emailed.length],
-    ["Top score", top.toFixed(1)],
-    ["Immediate", all.filter(c => c.decision === "immediate").length],
   ];
   document.getElementById("metrics").innerHTML = cards.map(([l, v]) =>
     `<div class="metric"><div class="label">${l}</div><div class="value">${v}</div></div>`).join("");

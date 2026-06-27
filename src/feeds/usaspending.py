@@ -11,12 +11,14 @@ USAspending requires award_type_codes from a single group per request, and each 
 import json
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import date, timedelta
 
 from normalize import base_record
 
 URL = "https://api.usaspending.gov/api/v2/search/spending_by_award/"
+DETAIL = "https://api.usaspending.gov/api/v2/awards/"
 _BASE_FIELDS = ["Award ID", "Recipient Name", "Awarding Agency", "generated_internal_id"]
 
 # Each group: codes, amount_type label, tier override (None = use agency map), amount field.
@@ -108,4 +110,40 @@ def fetch(names, lookback_days=60):
                 title=f"{recipient} — {program} ({g['atype']})",
                 first_seen=None,
             ))
+    return records
+
+
+def _pop_end(gid):
+    """Award detail endpoint — the search endpoint returns null for PoP dates."""
+    url = DETAIL + urllib.parse.quote(gid) + "/"
+    req = urllib.request.Request(url, headers={"User-Agent": "catalyst-tracker"})
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=40) as resp:
+                pop = json.load(resp).get("period_of_performance") or {}
+                return pop.get("end_date")
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 503) and attempt < 2:
+                time.sleep(2 * (attempt + 1))
+                continue
+            return None
+        except Exception:
+            return None
+    return None
+
+
+def enrich_active(records, limit=60):
+    """Fetch period-of-performance end dates for the biggest ticker-matched awards
+    and flag whether each is still active (ends today or later)."""
+    today = date.today().isoformat()
+    todo = [r for r in records if r.get("source") == "usaspending" and r.get("ticker")]
+    todo.sort(key=lambda r: r.get("amount") or 0, reverse=True)
+    for r in todo[:limit]:
+        gid = (r.get("url") or "").rsplit("/award/", 1)[-1]
+        if not gid or gid.startswith("http"):
+            continue
+        end = _pop_end(gid)
+        time.sleep(0.2)
+        r["pop_end"] = end
+        r["active"] = bool(end and end >= today)
     return records

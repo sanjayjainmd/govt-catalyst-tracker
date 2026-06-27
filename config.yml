@@ -48,9 +48,14 @@ email:
   send_decisions: ["immediate", "digest"]
 
 # How far back each feed looks on every run.
+# USAspending uses a wide window so awards granted earlier but STILL ACTIVE
+# (period of performance not yet ended) are captured, not just brand-new ones.
 lookback_days:
   federal_register: 7
-  usaspending: 60
+  usaspending: 1095        # ~3 years
+
+# Max awards to enrich with period-of-performance end dates per run (caps API calls).
+enrich_limit: 60
 
 # Drop catalysts older than this from the published dashboard.
 retention_days: 60

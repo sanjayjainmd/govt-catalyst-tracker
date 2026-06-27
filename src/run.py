@@ -105,8 +105,10 @@ def merge_published(records, cfg):
             rec["first_seen"] = existing[rec["id"]].get("first_seen", rec["first_seen"])
         existing[rec["id"]] = rec
 
+    # Keep anything still active (regardless of age) plus recently-seen entries.
     cutoff = (datetime.date.today() - datetime.timedelta(days=cfg.get("retention_days", 60))).isoformat()
-    kept = [c for c in existing.values() if (c.get("first_seen") or "9999") >= cutoff]
+    kept = [c for c in existing.values()
+            if c.get("active") or (c.get("first_seen") or "9999") >= cutoff]
     kept.sort(key=lambda c: (c.get("score", 0), c.get("first_seen", "")), reverse=True)
     return kept
 
@@ -119,6 +121,9 @@ def main():
     print("Polling feeds...")
     records = collect(cfg, crosswalk)
     print(f"Collected {len(records)} records.")
+
+    usaspending.enrich_active(records, cfg.get("enrich_limit", 60))
+    print(f"Active awards: {sum(1 for r in records if r.get('active'))}")
 
     alertable = diff(records, snapshot)
     send_set = cfg["email"]["send_decisions"]
