@@ -28,6 +28,14 @@ def _norm(name):
     return n
 
 
+def _candidates(c):
+    """Legal name plus any pipe/comma-separated aliases (for subsidiaries)."""
+    names = [c["legal_name"]]
+    raw = c.get("aliases") or ""
+    names += [a for a in re.split(r"[|,]", raw) if a.strip()]
+    return [_norm(n) for n in names if _norm(n)]
+
+
 def resolve(rec, crosswalk):
     """Attach ticker/market_cap/materiality if the recipient matches the crosswalk."""
     if not rec.get("recipient_legal"):
@@ -36,8 +44,7 @@ def resolve(rec, crosswalk):
     if not target:
         return rec
     for c in crosswalk:
-        cn = _norm(c["legal_name"])
-        if cn and (cn == target or cn in target or target in cn):
+        if any(cn == target or cn in target or target in cn for cn in _candidates(c)):
             rec["ticker"] = c["ticker"]
             try:
                 mc = float(c["market_cap_musd"]) * 1e6

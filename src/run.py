@@ -42,26 +42,38 @@ def apply_tier_overrides(rec, cfg):
 def collect(cfg, crosswalk):
     records, seen = [], set()
     lb = cfg.get("lookback_days", {})
+
+    def add(rec):
+        if rec["id"] in seen:
+            return
+        seen.add(rec["id"])
+        apply_tier_overrides(rec, cfg)
+        resolve(rec, crosswalk)
+        score_record(rec)
+        decide(rec, cfg["thresholds"])
+        records.append(rec)
+
+    # Discovery feed: Federal Register NOFOs/rules, per program (stage 2 signals).
     for program in cfg["programs"]:
-        for feed, days in (
-            (federal_register, lb.get("federal_register", 7)),
-            (usaspending, lb.get("usaspending", 30)),
-        ):
-            try:
-                items = feed.fetch(program, days)
-            except Exception as e:  # network/API hiccup shouldn't kill the run
-                print(f"  ! {feed.__name__} / {program['name']}: {e}")
-                continue
-            for rec in items:
-                if rec["id"] in seen:
-                    continue
-                seen.add(rec["id"])
-                apply_tier_overrides(rec, cfg)
-                resolve(rec, crosswalk)
-                score_record(rec)
-                decide(rec, cfg["thresholds"])
-                records.append(rec)
-            print(f"  + {feed.__name__} / {program['name']}: {len(items)} items")
+        try:
+            items = federal_register.fetch(program, lb.get("federal_register", 7))
+        except Exception as e:  # network/API hiccup shouldn't kill the run
+            print(f"  ! federal_register / {program['name']}: {e}")
+            items = []
+        for rec in items:
+            add(rec)
+        print(f"  + federal_register / {program['name']}: {len(items)} items")
+
+    # Targeted feed: USAspending awards TO tracked companies (the tradable names).
+    names = [c["legal_name"] for c in crosswalk]
+    try:
+        items = usaspending.fetch(names, lb.get("usaspending", 60))
+    except Exception as e:
+        print(f"  ! usaspending: {e}")
+        items = []
+    for rec in items:
+        add(rec)
+    print(f"  + usaspending / {len(names)} tracked recipients: {len(items)} awards")
     return records
 
 
@@ -113,7 +125,15 @@ def main():
     to_email = [r for r in alertable if r["decision"] in send_set]
     print(f"{len(alertable)} new/changed, {len(to_email)} qualify for email.")
 
-    email_digest.send(to_email, cfg["email"]["subject_prefix"], DASHBOARD_URL)
+    prefix = cfg["email"]["subject_prefix"]
+    if to_email:
+        email_digest.send(to_email, prefix, DASHBOARD_URL)
+    else:
+        # Daily heartbeat so you always know the run happened.
+        stats = {"scanned": len(records),
+                 "tracked": sum(1 for r in records if r.get("ticker")),
+                 "new": len(alertable)}
+        email_digest.send_heartbeat(stats, prefix, DASHBOARD_URL)
 
     kept = merge_published(records, cfg)
     PUBLISH.parent.mkdir(parents=True, exist_ok=True)

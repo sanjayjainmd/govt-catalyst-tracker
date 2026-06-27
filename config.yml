@@ -50,7 +50,7 @@ email:
 # How far back each feed looks on every run.
 lookback_days:
   federal_register: 7
-  usaspending: 30
+  usaspending: 60
 
 # Drop catalysts older than this from the published dashboard.
 retention_days: 60

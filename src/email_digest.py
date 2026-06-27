@@ -1,11 +1,11 @@
-"""Build and send the daily digest email via Gmail SMTP.
+"""Build and send the daily digest (and heartbeat) email via Gmail SMTP.
 
 Credentials come from environment variables (GitHub Secrets in CI):
   MAIL_USERNAME      your gmail address
   MAIL_APP_PASSWORD  a Google app password (NOT your normal password)
   MAIL_TO            where to send (defaults to MAIL_USERNAME)
 
-If creds are missing (e.g. local dry run), it prints the digest instead of sending.
+If creds are missing (e.g. local dry run), it prints instead of sending.
 """
 import os
 import smtplib
@@ -13,6 +13,24 @@ from email.mime.text import MIMEText
 
 _TIER_LABEL = {1: "T1 offtake/floor", 2: "T2 production credit",
                3: "T3 loan", 4: "T4 grant", 5: "T5 R&D"}
+
+
+def _smtp_send(subject, html):
+    user = os.environ.get("MAIL_USERNAME")
+    pw = os.environ.get("MAIL_APP_PASSWORD")
+    to = os.environ.get("MAIL_TO") or user
+    if not (user and pw and to):
+        print(f"email: MAIL_* not set — would send '{subject}':\n{html}\n")
+        return False
+    msg = MIMEText(html, "html")
+    msg["Subject"] = subject
+    msg["From"] = user
+    msg["To"] = to
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(user, pw)
+        server.sendmail(user, [to], msg.as_string())
+    print(f"email: sent '{subject}' to {to}")
+    return True
 
 
 def _row_html(r):
@@ -54,28 +72,25 @@ def build_html(rows, dash_url=None):
 
 def send(rows, subject_prefix="[Catalyst]", dash_url=None):
     if not rows:
-        print("email: no qualifying catalysts, nothing to send.")
         return False
-
-    user = os.environ.get("MAIL_USERNAME")
-    pw = os.environ.get("MAIL_APP_PASSWORD")
-    to = os.environ.get("MAIL_TO") or user
-    html = build_html(rows, dash_url)
-
-    if not (user and pw and to):
-        print("email: MAIL_* env vars not set — printing digest instead:\n")
-        print(html)
-        return False
-
     immediate = sum(1 for r in rows if r["decision"] == "immediate")
     subject = f"{subject_prefix} {len(rows)} catalysts" + (f", {immediate} urgent" if immediate else "")
-    msg = MIMEText(html, "html")
-    msg["Subject"] = subject
-    msg["From"] = user
-    msg["To"] = to
+    return _smtp_send(subject, build_html(rows, dash_url))
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login(user, pw)
-        server.sendmail(user, [to], msg.as_string())
-    print(f"email: sent '{subject}' to {to}")
-    return True
+
+def send_heartbeat(stats, subject_prefix="[Catalyst]", dash_url=None):
+    """Daily confirmation email when nothing scored above threshold."""
+    link = f'<p><a href="{dash_url}">Open dashboard</a></p>' if dash_url else ""
+    html = f"""<html><body style="font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;">
+    <h2 style="font-weight:500;">Government catalyst digest</h2>
+    <p>Daily run completed — no new catalysts above threshold today.</p>
+    <ul style="color:#444;font-size:14px;">
+      <li>Scanned: {stats.get('scanned', 0)} events</li>
+      <li>Mapped to a ticker: {stats.get('tracked', 0)}</li>
+      <li>New/changed this run: {stats.get('new', 0)}</li>
+    </ul>{link}
+    <p style="color:#999;font-size:12px;margin-top:24px;">
+      Descriptive triage, not a predictive signal.</p>
+    </body></html>"""
+    subject = f"{subject_prefix} daily check — nothing new"
+    return _smtp_send(subject, html)
