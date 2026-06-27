@@ -17,7 +17,7 @@ from resolve import load_crosswalk, resolve  # noqa: E402
 from score import score_record           # noqa: E402
 from route import decide                  # noqa: E402
 import email_digest                       # noqa: E402
-from feeds import federal_register, usaspending, sec_edgar  # noqa: E402
+from feeds import federal_register, usaspending, sec_edgar, press_releases  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG = ROOT / "config.yml"
@@ -84,7 +84,45 @@ def collect(cfg, crosswalk):
     for rec in items:
         add(rec)
     print(f"  + sec_edgar / incentive 8-Ks: {len(items)} filings")
+
+    # Press-release / news feed: agency + company announcements (Google News RSS).
+    try:
+        items = press_releases.fetch(lb.get("press_releases", 30))
+    except Exception as e:
+        print(f"  ! press_releases: {e}")
+        items = []
+    for rec in items:
+        add(rec)
+    print(f"  + press_releases / incentive announcements: {len(items)} items")
     return records
+
+
+def dedupe_press(records):
+    """Collapse press-release rows for the same event (same ticker + amount) —
+    many outlets report one deal. Keep the highest-scoring representative."""
+    out, best = [], {}
+    for r in records:
+        if r["source"] == "press_release" and r.get("amount"):
+            k = (r.get("ticker") or "", int(r["amount"]))
+            if k in best:
+                if r["score"] > best[k]["score"]:
+                    best[k].update(title=r["title"], url=r["url"], score=r["score"])
+                continue
+            best[k] = r
+        out.append(r)
+    return out
+
+
+def dedupe_email(rows):
+    """One line per event across feeds (e.g. the 8-K and its press release)."""
+    seen, out = set(), []
+    for r in sorted(rows, key=lambda x: x.get("score", 0), reverse=True):
+        k = (r.get("ticker") or r.get("title"), int(r.get("amount") or 0))
+        if k in seen:
+            continue
+        seen.add(k)
+        out.append(r)
+    return out
 
 
 def diff(records, snapshot):
@@ -132,12 +170,13 @@ def main():
     records = collect(cfg, crosswalk)
     print(f"Collected {len(records)} records.")
 
+    records = dedupe_press(records)
     usaspending.enrich_active(records, cfg.get("enrich_limit", 60))
     print(f"Active awards: {sum(1 for r in records if r.get('active'))}")
 
     alertable = diff(records, snapshot)
     send_set = cfg["email"]["send_decisions"]
-    to_email = [r for r in alertable if r["decision"] in send_set]
+    to_email = dedupe_email([r for r in alertable if r["decision"] in send_set])
     print(f"{len(alertable)} new/changed, {len(to_email)} qualify for email.")
 
     prefix = cfg["email"]["subject_prefix"]
