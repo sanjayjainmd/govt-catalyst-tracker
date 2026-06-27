@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from normalize import _utcnow            # noqa: E402
 from resolve import load_crosswalk, resolve  # noqa: E402
+import market_cap  # noqa: E402
 from score import score_record           # noqa: E402
 from route import decide                  # noqa: E402
 import email_digest                       # noqa: E402
@@ -163,7 +164,7 @@ def merge_published(records, cfg):
 
 def main():
     cfg = yaml.safe_load(CONFIG.read_text())
-    crosswalk = load_crosswalk(CROSSWALK)
+    crosswalk = market_cap.apply_live_caps(load_crosswalk(CROSSWALK))
     snapshot = json.loads(SNAPSHOT.read_text()) if SNAPSHOT.exists() else {"items": {}}
 
     print("Polling feeds...")
@@ -180,14 +181,17 @@ def main():
     print(f"{len(alertable)} new/changed, {len(to_email)} qualify for email.")
 
     prefix = cfg["email"]["subject_prefix"]
-    if to_email:
-        email_digest.send(to_email, prefix, DASHBOARD_URL)
-    else:
-        # Daily heartbeat so you always know the run happened.
-        stats = {"scanned": len(records),
-                 "tracked": sum(1 for r in records if r.get("ticker")),
-                 "new": len(alertable)}
-        email_digest.send_heartbeat(stats, prefix, DASHBOARD_URL)
+    try:
+        if to_email:
+            email_digest.send(to_email, prefix, DASHBOARD_URL)
+        else:
+            # Daily heartbeat so you always know the run happened.
+            stats = {"scanned": len(records),
+                     "tracked": sum(1 for r in records if r.get("ticker")),
+                     "new": len(alertable)}
+            email_digest.send_heartbeat(stats, prefix, DASHBOARD_URL)
+    except Exception as e:  # a mail hiccup shouldn't lose the data commit
+        print(f"email: send failed: {e}")
 
     kept = merge_published(records, cfg)
     PUBLISH.parent.mkdir(parents=True, exist_ok=True)
