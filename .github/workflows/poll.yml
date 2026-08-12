@@ -2,7 +2,7 @@ name: poll-catalysts
 
 on:
   schedule:
-    - cron: "0 11 * * *"      # 11:00 UTC daily (~7am ET). Cron is best-effort.
+    - cron: "0 11 * * 1"      # 11:00 UTC Mondays (~7am ET). Cron is best-effort.
   workflow_dispatch:           # lets you run it manually from the Actions tab
   push:                        # also run when the pipeline code changes
     branches: [main]
